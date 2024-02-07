@@ -35,24 +35,7 @@ info:
 application:
   master-host: http://${MASTER_HOST:localhost:9000}
   master-health-interval: ${MASTER_HEALTH_INTERVAL:1000}
-
-
-management:
-  endpoint:
-    health:
-      show-details: always
-  endpoints:
-    web:
-      base-path: /management
-      exposure:
-        include: "health,metrics,loggers,prometheus,env,info,threaddump,heapdump,startup"
-  health:
-    defaults:
-      enabled: true
-    livenessState:
-      enabled: true
-    readinessState:
-      enabled: true
+  master-health-timeout: ${MASTER-HEALTH_TIMEOUT:20000}
 
 springdoc:
   group-configs:

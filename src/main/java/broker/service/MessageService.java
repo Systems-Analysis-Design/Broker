@@ -3,6 +3,7 @@ package broker.service;
 import broker.config.BrokerConfig;
 import broker.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,25 +14,36 @@ import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MessageService {
     @Value("${application.master-host}")
     private String masterHost;
     private final BrokerConfig brokerConfig;
     private final RestTemplate restTemplate;
+    private final MessageReadWriteService messageReadWriteService;
 
-    public void push(final PushRequestDto pushRequestDto) {
-        // TODO read or write file
+    public PushResponseDto push(final PushRequestDto pushRequestDto) {
+        messageReadWriteService.push(pushRequestDto.partition(), pushRequestDto.messageDto());
         if (pushRequestDto.partition().equals(brokerConfig.getPrimaryPartition())) {
-            brokerConfig.getReplicaBrokerDtoList().forEach(x -> pushReplica(x, brokerConfig.getPrimaryPartition(), pushRequestDto.messageDto()));
+            boolean allReplicasGotMessage = brokerConfig.getReplicaBrokerDtoList()
+                                                        .stream()
+                                                        .allMatch(x -> pushReplica(x,
+                                                                                   brokerConfig.getPrimaryPartition(),
+                                                                                   pushRequestDto.messageDto()));
+            return new PushResponseDto(allReplicasGotMessage);
         }
+        return new PushResponseDto(false);
     }
 
-    public MessageDto pull(final PullRequestDto pullRequestDto) {
-        // TODO read or write file
+    public PullResponseDto pull(final PullRequestDto pullRequestDto) {
+        MessageDto messageDto = messageReadWriteService.pull(pullRequestDto.partition());
         if (pullRequestDto.partition().equals(brokerConfig.getPrimaryPartition())) {
-            brokerConfig.getReplicaBrokerDtoList().forEach(x -> pullReplica(x, brokerConfig.getPrimaryPartition()));
+            boolean allReplicasGotMessage = brokerConfig.getReplicaBrokerDtoList()
+                                                        .stream()
+                                                        .allMatch(x -> pullReplica(x, brokerConfig.getPrimaryPartition()));
+            return new PullResponseDto(messageDto, allReplicasGotMessage);
         }
-        return null;
+        return new PullResponseDto(messageDto, false);
     }
 
     @Scheduled(fixedRateString = "${application.master-health-interval}")
@@ -39,37 +51,38 @@ public class MessageService {
         String uri = masterHost + "/api/health";
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto();
+        MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto(messageReadWriteService.getTotalNumberOfMessages(),
+                                                                                   messageReadWriteService.getTotalNumberOfQueues());
         HttpEntity<MasterHealthRequestDto> entity = new HttpEntity<>(masterHealthRequestDto, headers);
+        restTemplate.exchange(uri, HttpMethod.POST, entity, Void.class);
+    }
+
+    private boolean pushReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition, final MessageDto messageDto) {
         try {
-            ResponseEntity<MasterHealthResponseDto> result = restTemplate.exchange(uri, HttpMethod.POST, entity, MasterHealthResponseDto.class);
-            MasterHealthResponseDto body = result.getBody();
+            String uri = replicaBrokerDto.host() + "/api/push";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            PushRequestDto pushRequestDto = new PushRequestDto(partition, messageDto);
+            HttpEntity<PushRequestDto> entity = new HttpEntity<>(pushRequestDto, headers);
+            ResponseEntity<PushResponseDto> result = restTemplate.exchange(uri, HttpMethod.POST, entity, PushResponseDto.class);
+            return result.getStatusCode().equals(HttpStatusCode.valueOf(200));
         } catch (Exception e) {
-
+            return false;
         }
+
     }
 
-    private void pushReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition, final MessageDto messageDto) {
-        String uri = replicaBrokerDto.host() + "/api/push";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        PushRequestDto pushRequestDto = new PushRequestDto(partition, messageDto);
-        HttpEntity<PushRequestDto> entity = new HttpEntity<>(pushRequestDto, headers);
-        ResponseEntity<Void> result = restTemplate.exchange(uri, HttpMethod.POST, entity, Void.class);
-        if (!result.getStatusCode().equals(HttpStatusCode.valueOf(200))) {
-            throw new RuntimeException("error in sync replica");
-        }
-    }
-
-    private void pullReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition) {
-        String uri = replicaBrokerDto.host() + "/api/pull";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        PullRequestDto pullRequestDto = new PullRequestDto(partition);
-        HttpEntity<PullRequestDto> entity = new HttpEntity<>(pullRequestDto, headers);
-        ResponseEntity<MessageDto> result = restTemplate.exchange(uri, HttpMethod.POST, entity, MessageDto.class);
-        if (!result.getStatusCode().equals(HttpStatusCode.valueOf(200))) {
-            throw new RuntimeException("error in sync replica");
+    private boolean pullReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition) {
+        try {
+            String uri = replicaBrokerDto.host() + "/api/pull";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            PullRequestDto pullRequestDto = new PullRequestDto(partition);
+            HttpEntity<PullRequestDto> entity = new HttpEntity<>(pullRequestDto, headers);
+            ResponseEntity<PullResponseDto> result = restTemplate.exchange(uri, HttpMethod.POST, entity, PullResponseDto.class);
+            return result.getStatusCode().equals(HttpStatusCode.valueOf(200));
+        } catch (Exception e) {
+            return false;
         }
     }
 }

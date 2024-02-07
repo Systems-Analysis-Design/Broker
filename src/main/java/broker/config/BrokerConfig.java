@@ -16,5 +16,4 @@ import java.util.List;
 public class BrokerConfig {
     private String primaryPartition;
     private List<ReplicaBrokerDto> replicaBrokerDtoList;
-    private List<ReplicaPartitionDto> replicaPartitionDtoList;
 }
