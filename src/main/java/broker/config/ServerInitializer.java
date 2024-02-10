@@ -59,6 +59,7 @@ public class ServerInitializer implements ApplicationRunner, ApplicationContextA
     private boolean callMaster(String uri) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.setContentType(MediaType.APPLICATION_JSON);
         BrokerJoinRequestDto brokerJoinRequestDto = new BrokerJoinRequestDto(serverAddress + ":" + serverPort);
         HttpEntity<BrokerJoinRequestDto> entity = new HttpEntity<>(brokerJoinRequestDto, headers);
         final RetryTemplate template = new RetryTemplate();
@@ -76,6 +77,7 @@ public class ServerInitializer implements ApplicationRunner, ApplicationContextA
                 brokerConfig.setPrimaryPartition(body.primaryPartition());
                 return true;
             } catch (final Exception ex) {
+                log.error(uri, ex);
                 return false;
             }
         });

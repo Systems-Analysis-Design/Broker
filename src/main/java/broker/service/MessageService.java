@@ -24,6 +24,7 @@ public class MessageService {
 
     public PushResponseDto push(final PushRequestDto pushRequestDto) {
         messageReadWriteService.push(pushRequestDto.partition(), pushRequestDto.messageDto());
+        log.info("message pushed: " + pushRequestDto.messageDto().key());
         if (pushRequestDto.partition().equals(brokerConfig.getPrimaryPartition())) {
             boolean allReplicasGotMessage = brokerConfig.getReplicaBrokerDtoList()
                                                         .stream()
@@ -37,6 +38,7 @@ public class MessageService {
 
     public PullResponseDto pull(final PullRequestDto pullRequestDto) {
         MessageDto messageDto = messageReadWriteService.pull(pullRequestDto.partition());
+        log.info("message pulled: " + messageDto.key());
         if (pullRequestDto.partition().equals(brokerConfig.getPrimaryPartition())) {
             boolean allReplicasGotMessage = brokerConfig.getReplicaBrokerDtoList()
                                                         .stream()
@@ -51,6 +53,7 @@ public class MessageService {
         String uri = masterHost + "/api/health";
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.setContentType(MediaType.APPLICATION_JSON);
         MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto(messageReadWriteService.getTotalNumberOfMessages(),
                                                                                    messageReadWriteService.getTotalNumberOfQueues());
         HttpEntity<MasterHealthRequestDto> entity = new HttpEntity<>(masterHealthRequestDto, headers);
