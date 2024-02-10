@@ -49,12 +49,10 @@ public class MessageService {
     @Scheduled(fixedRateString = "${application.master-health-interval}")
     public void callMasterHealth() {
         String uri = masterHost + "/api/health";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto(messageReadWriteService.getTotalNumberOfMessages(),
                                                                                    messageReadWriteService.getTotalNumberOfQueues());
-        HttpEntity<MasterHealthRequestDto> entity = new HttpEntity<>(masterHealthRequestDto, headers);
-        restTemplate.exchange(uri, HttpMethod.POST, entity, Void.class);
+        RequestEntity<MasterHealthRequestDto> requestEntity = RequestEntity.post(uri).contentType(MediaType.APPLICATION_JSON).body(masterHealthRequestDto);
+        restTemplate.exchange(requestEntity, Void.class);
     }
 
     private boolean pushReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition, final MessageDto messageDto) {

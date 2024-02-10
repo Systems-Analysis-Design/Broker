@@ -33,7 +33,7 @@ info:
     version: @project.version@
 
 application:
-  master-host: http://${MASTER_HOST:localhost:9000}
+  master-host: http://${MASTER_HOST:localhost:8080}
   master-health-interval: ${MASTER_HEALTH_INTERVAL:1000}
   master-health-timeout: ${MASTER-HEALTH_TIMEOUT:20000}
 
