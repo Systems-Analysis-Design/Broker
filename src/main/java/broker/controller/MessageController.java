@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/message")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class MessageController {
     private final MessageService messageService;
@@ -26,6 +26,15 @@ public class MessageController {
 
     @PostMapping("/pull")
     public ResponseEntity<PullResponseDto> pull(@RequestBody PullRequestDto pullRequestDto) {
+        try{
+            return ResponseEntity.ok(messageService.pull(pullRequestDto));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/replica")
+    public ResponseEntity<PullResponseDto> setReplica(@RequestBody PullRequestDto pullRequestDto) {
         try{
             return ResponseEntity.ok(messageService.pull(pullRequestDto));
         } catch (Exception e) {
