@@ -73,6 +73,7 @@ public class ServerInitializerService implements ApplicationRunner, ApplicationC
                 brokerConfig.setPrimaryPartition(body.primaryPartition());
                 return true;
             } catch (final Exception ex) {
+                log.error(uri, ex);
                 return false;
             }
         });
