@@ -58,11 +58,9 @@ public class MessageService {
     private boolean pushReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition, final MessageDto messageDto) {
         try {
             String uri = replicaBrokerDto.host() + "/api/push";
-            HttpHeaders headers = new HttpHeaders();
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
             PushRequestDto pushRequestDto = new PushRequestDto(partition, messageDto);
-            HttpEntity<PushRequestDto> entity = new HttpEntity<>(pushRequestDto, headers);
-            ResponseEntity<PushResponseDto> result = restTemplate.exchange(uri, HttpMethod.POST, entity, PushResponseDto.class);
+            RequestEntity<PushRequestDto> requestEntity = RequestEntity.post(uri).contentType(MediaType.APPLICATION_JSON).body(pushRequestDto);
+            ResponseEntity<PushResponseDto> result = restTemplate.exchange(requestEntity, PushResponseDto.class);
             return result.getStatusCode().equals(HttpStatusCode.valueOf(200));
         } catch (Exception e) {
             return false;
@@ -73,11 +71,9 @@ public class MessageService {
     private boolean pullReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition) {
         try {
             String uri = replicaBrokerDto.host() + "/api/pull";
-            HttpHeaders headers = new HttpHeaders();
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
             PullRequestDto pullRequestDto = new PullRequestDto(partition);
-            HttpEntity<PullRequestDto> entity = new HttpEntity<>(pullRequestDto, headers);
-            ResponseEntity<PullResponseDto> result = restTemplate.exchange(uri, HttpMethod.POST, entity, PullResponseDto.class);
+            RequestEntity<PullRequestDto> requestEntity = RequestEntity.post(uri).contentType(MediaType.APPLICATION_JSON).body(pullRequestDto);
+            ResponseEntity<PullResponseDto> result = restTemplate.exchange(requestEntity, PullResponseDto.class);
             return result.getStatusCode().equals(HttpStatusCode.valueOf(200));
         } catch (Exception e) {
             return false;
