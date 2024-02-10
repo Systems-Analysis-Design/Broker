@@ -34,11 +34,8 @@ public class MessageController {
     }
 
     @PostMapping("/replica")
-    public ResponseEntity<PullResponseDto> setReplica(@RequestBody PullRequestDto pullRequestDto) {
-        try{
-            return ResponseEntity.ok(messageService.pull(pullRequestDto));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<Void> addReplica(@RequestBody AddReplicaRequestDto dto) {
+        messageService.addReplica(dto);
+        return ResponseEntity.ok().build();
     }
 }

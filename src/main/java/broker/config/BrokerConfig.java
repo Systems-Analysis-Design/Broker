@@ -14,6 +14,7 @@ import java.util.List;
 @Setter
 @Getter
 public class BrokerConfig {
+    private String name;
     private String primaryPartition;
     private List<ReplicaBrokerDto> replicaBrokerDtoList;
 }
