@@ -6,9 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,75 +21,61 @@ public class MessageService {
     private final RestTemplate restTemplate;
     private final MessageReadWriteService messageReadWriteService;
 
-    public PushResponseDto push(final PushRequestDto pushRequestDto) {
-        messageReadWriteService.push(pushRequestDto.partition(), pushRequestDto.messageDto());
-        log.info("message pushed: " + pushRequestDto.messageDto().key());
-        if (pushRequestDto.partition().equals(brokerConfig.getPrimaryPartition())) {
-            boolean allReplicasGotMessage = brokerConfig.getReplicaBrokerDtoList()
-                                                        .stream()
-                                                        .allMatch(x -> pushReplica(x,
-                                                                                   brokerConfig.getPrimaryPartition(),
-                                                                                   pushRequestDto.messageDto()));
-            return new PushResponseDto(allReplicasGotMessage);
-        }
-        return new PushResponseDto(false);
+    public void push(final PushRequestDto pushRequestDto) {
+        messageReadWriteService.push(pushRequestDto.name(), pushRequestDto.message());
+        log.info("message pushed: " + pushRequestDto.message().key());
+        pushRequestDto.replicas().forEach(x -> pushReplica(x, pushRequestDto.message()));
     }
 
-    public PullResponseDto pull(final PullRequestDto pullRequestDto) {
-        MessageDto messageDto = messageReadWriteService.pull(pullRequestDto.partition());
+    public MessageDto pull(final PullRequestDto pullRequestDto) {
+        MessageDto messageDto = messageReadWriteService.pull(pullRequestDto.name());
         log.info("message pulled: " + messageDto.key());
-        if (pullRequestDto.partition().equals(brokerConfig.getPrimaryPartition())) {
-            boolean allReplicasGotMessage = brokerConfig.getReplicaBrokerDtoList()
-                                                        .stream()
-                                                        .allMatch(x -> pullReplica(x, brokerConfig.getPrimaryPartition()));
-            return new PullResponseDto(messageDto, allReplicasGotMessage);
-        }
-        return new PullResponseDto(messageDto, false);
+        pullRequestDto.replicas().forEach(this::pullReplica);
+        return messageDto;
     }
 
-    public void addReplica(AddReplicaRequestDto dto) {
-        ReplicaBrokerDto replicaBrokerDto = new ReplicaBrokerDto(dto.address());
-        brokerConfig.getReplicaBrokerDtoList().add(replicaBrokerDto);
-    }
+//    @Scheduled(fixedRateString = "${application.master-health-interval}")
+//    public void callMasterHealth() {
+//        String uri = masterHost + "/api/health";
+//        MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto(brokerConfig.getName(),
+//                                                                                   messageReadWriteService.getTotalNumberOfMessages(),
+//                                                                                   messageReadWriteService.getTotalNumberOfQueues());
+//        RequestEntity<MasterHealthRequestDto> requestEntity = RequestEntity.post(uri)
+//                                                                           .contentType(MediaType.APPLICATION_JSON)
+//                                                                           .body(masterHealthRequestDto);
+//        restTemplate.exchange(requestEntity, Void.class);
+//    }
 
-    @Scheduled(fixedRateString = "${application.master-health-interval}")
-    public void callMasterHealth() {
-        String uri = masterHost + "/api/health";
-        MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto(brokerConfig.getName(),
-                                                                                   messageReadWriteService.getTotalNumberOfMessages(),
-                                                                                   messageReadWriteService.getTotalNumberOfQueues());
-        RequestEntity<MasterHealthRequestDto> requestEntity = RequestEntity.post(uri)
-                                                                           .contentType(MediaType.APPLICATION_JSON)
-                                                                           .body(masterHealthRequestDto);
-        restTemplate.exchange(requestEntity, Void.class);
-    }
-
-    private boolean pushReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition, final MessageDto messageDto) {
+    private void pushReplica(final String host, final MessageDto message) {
         try {
-            String uri = replicaBrokerDto.host() + "/api/push";
-            PushRequestDto pushRequestDto = new PushRequestDto(partition, messageDto);
+            String uri = host + "/api/push";
+            PushRequestDto pushRequestDto = new PushRequestDto(brokerConfig.getName(), message, List.of());
             RequestEntity<PushRequestDto> requestEntity = RequestEntity.post(uri)
                                                                        .contentType(MediaType.APPLICATION_JSON)
                                                                        .body(pushRequestDto);
-            ResponseEntity<PushResponseDto> result = restTemplate.exchange(requestEntity, PushResponseDto.class);
-            return result.getStatusCode().equals(HttpStatusCode.valueOf(200));
+            ResponseEntity<Void> result = restTemplate.exchange(requestEntity, Void.class);
+            if (!result.getStatusCode().equals(HttpStatusCode.valueOf(200))) {
+                log.error("error in sync replicas for push");
+            }
         } catch (Exception e) {
-            return false;
+            log.error("error in sync replicas for push", e);
         }
 
     }
 
-    private boolean pullReplica(final ReplicaBrokerDto replicaBrokerDto, final String partition) {
+    private void pullReplica(final String host) {
         try {
-            String uri = replicaBrokerDto.host() + "/api/pull";
-            PullRequestDto pullRequestDto = new PullRequestDto(partition);
+            String uri = host + "/api/pull";
+            PullRequestDto pullRequestDto = new PullRequestDto(brokerConfig.getName(), List.of());
             RequestEntity<PullRequestDto> requestEntity = RequestEntity.post(uri)
                                                                        .contentType(MediaType.APPLICATION_JSON)
                                                                        .body(pullRequestDto);
-            ResponseEntity<PullResponseDto> result = restTemplate.exchange(requestEntity, PullResponseDto.class);
-            return result.getStatusCode().equals(HttpStatusCode.valueOf(200));
+            ResponseEntity<MessageDto> result = restTemplate.exchange(requestEntity, MessageDto.class);
+            if (!result.getStatusCode().equals(HttpStatusCode.valueOf(200))) {
+                log.error("error in sync replicas for pull");
+            }
         } catch (Exception e) {
-            return false;
+            log.error("error in sync replicas for pull", e);
         }
     }
 }

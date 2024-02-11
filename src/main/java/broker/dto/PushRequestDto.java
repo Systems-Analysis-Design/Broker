@@ -1,4 +1,6 @@
 package broker.dto;
 
-public record PushRequestDto(String partition, MessageDto messageDto) {
+import java.util.List;
+
+public record PushRequestDto(String name, MessageDto message, List<String> replicas) {
 }

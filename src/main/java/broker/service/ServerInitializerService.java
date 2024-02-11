@@ -2,7 +2,7 @@ package broker.service;
 
 import broker.config.BrokerConfig;
 import broker.dto.BrokerJoinRequestDto;
-import broker.dto.ReplicaBrokerResponseDto;
+import broker.dto.BrokerJoinResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +40,6 @@ public class ServerInitializerService implements ApplicationRunner, ApplicationC
     @Override
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         this.context = ctx;
-
     }
 
     @Override
@@ -56,21 +55,22 @@ public class ServerInitializerService implements ApplicationRunner, ApplicationC
     }
 
     private boolean callMaster(String uri) {
-        BrokerJoinRequestDto brokerJoinRequestDto = new BrokerJoinRequestDto(serverAddress + ":" + serverPort);
-        RequestEntity<BrokerJoinRequestDto> requestEntity = RequestEntity.post(uri).contentType(MediaType.APPLICATION_JSON).body(brokerJoinRequestDto);
+        BrokerJoinRequestDto brokerJoinRequestDto = new BrokerJoinRequestDto("http://" + serverAddress + ":" + serverPort);
+        RequestEntity<BrokerJoinRequestDto> requestEntity = RequestEntity.post(uri)
+                                                                         .contentType(MediaType.APPLICATION_JSON)
+                                                                         .body(brokerJoinRequestDto);
         final RetryTemplate template = new RetryTemplate();
         final TimeoutRetryPolicy policy = new TimeoutRetryPolicy(masterHealthTimeout);
         template.setRetryPolicy(policy);
         return template.execute(context -> {
             try {
-                ResponseEntity<ReplicaBrokerResponseDto> result = restTemplate.exchange(requestEntity, ReplicaBrokerResponseDto.class);
-                ReplicaBrokerResponseDto body = result.getBody();
+                ResponseEntity<BrokerJoinResponseDto> result = restTemplate.exchange(requestEntity, BrokerJoinResponseDto.class);
+                BrokerJoinResponseDto body = result.getBody();
                 if (body == null) {
                     return false;
                 }
                 BrokerConfig brokerConfig = (BrokerConfig) this.context.getBean("brokerConfig");
-                brokerConfig.setReplicaBrokerDtoList(body.replicaBrokerDtoList());
-                brokerConfig.setPrimaryPartition(body.primaryPartition());
+                brokerConfig.setName(body.name());
                 return true;
             } catch (final Exception ex) {
                 log.error(uri, ex);

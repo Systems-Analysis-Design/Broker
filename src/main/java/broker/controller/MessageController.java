@@ -16,26 +16,21 @@ public class MessageController {
     private final MessageService messageService;
 
     @PostMapping("/push")
-    public ResponseEntity<PushResponseDto> push(@RequestBody PushRequestDto pushRequestDto) {
+    public ResponseEntity<Void> push(@RequestBody PushRequestDto pushRequestDto) {
         try{
-            return ResponseEntity.ok(messageService.push(pushRequestDto));
+            messageService.push(pushRequestDto);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
     @PostMapping("/pull")
-    public ResponseEntity<PullResponseDto> pull(@RequestBody PullRequestDto pullRequestDto) {
+    public ResponseEntity<MessageDto> pull(@RequestBody PullRequestDto pullRequestDto) {
         try{
             return ResponseEntity.ok(messageService.pull(pullRequestDto));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
-    }
-
-    @PostMapping("/replica")
-    public ResponseEntity<Void> addReplica(@RequestBody AddReplicaRequestDto dto) {
-        messageService.addReplica(dto);
-        return ResponseEntity.ok().build();
     }
 }

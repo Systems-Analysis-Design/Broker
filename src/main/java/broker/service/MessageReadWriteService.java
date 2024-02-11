@@ -33,20 +33,4 @@ public class MessageReadWriteService {
     public int getTotalNumberOfQueues() {
         return partitionNameMessageQueueMap.size();
     }
-
-//    private String serialize(final MessageDto message) {
-//        try {
-//            return mapper.writeValueAsString(message);
-//        } catch (final JsonProcessingException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    private MessageDto deserialize(final String message) {
-//        try {
-//            return mapper.readValue(message, MessageDto.class);
-//        } catch (final JsonProcessingException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 }

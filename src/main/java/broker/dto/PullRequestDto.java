@@ -1,4 +1,6 @@
 package broker.dto;
 
-public record PullRequestDto(String partition) {
+import java.util.List;
+
+public record PullRequestDto(String name, List<String> replicas) {
 }

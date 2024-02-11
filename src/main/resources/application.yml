@@ -13,35 +13,17 @@ spring:
   cache:
     type: none
 
-  jmx:
-    enabled: false
-
 server:
   address: ${SERVER_HOST:localhost}
-  port: ${SERVER_PORT:30010}
-  tomcat:
-    threads:
-      max: ${TOMCAT_THREADS_MAX:1}
-    max-swallow-size: ${TOMCAT_MAX_SWALLOW_SIZE:10MB}
-    max-http-form-post-size: ${TOMCAT_MAX_HTTP_FORM_POST_SIZE:10MB}
+  port: ${SERVER_PORT:30012}
+#  tomcat:
+#    threads:
+#      max: ${TOMCAT_THREADS_MAX:1}
+#    max-swallow-size: ${TOMCAT_MAX_SWALLOW_SIZE:10MB}
+#    max-http-form-post-size: ${TOMCAT_MAX_HTTP_FORM_POST_SIZE:10MB}
   shutdown: graceful
-
-
-info:
-  app:
-    name: @project.artifactId@
-    version: @project.version@
 
 application:
   master-host: http://${MASTER_HOST:localhost:8080}
   master-health-interval: ${MASTER_HEALTH_INTERVAL:1000}
   master-health-timeout: ${MASTER-HEALTH_TIMEOUT:20000}
-
-springdoc:
-  group-configs:
-    - group: web
-      paths-to-match:
-        - "/api/web/**"
-    - group: inner
-      paths-to-exclude:
-        - "/api/web/**"
