@@ -25,5 +25,4 @@ server:
 
 application:
   master-host: http://${MASTER_HOST:localhost:8080}
-  master-health-interval: ${MASTER_HEALTH_INTERVAL:1000}
-  master-health-timeout: ${MASTER-HEALTH_TIMEOUT:20000}
+  master-join-timeout: ${MASTER_JOIN_TIMEOUT:20000}

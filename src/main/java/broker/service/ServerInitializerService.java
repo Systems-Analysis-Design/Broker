@@ -28,8 +28,8 @@ public class ServerInitializerService implements ApplicationRunner, ApplicationC
     @Value("${application.master-host}")
     private String masterHost;
 
-    @Value("${application.master-health-timeout}")
-    private long masterHealthTimeout;
+    @Value("${application.master-join-timeout}")
+    private long masterJoinTimeout;
 
     @Value("${server.address}")
     private String serverAddress;
@@ -60,7 +60,7 @@ public class ServerInitializerService implements ApplicationRunner, ApplicationC
                                                                          .contentType(MediaType.APPLICATION_JSON)
                                                                          .body(brokerJoinRequestDto);
         final RetryTemplate template = new RetryTemplate();
-        final TimeoutRetryPolicy policy = new TimeoutRetryPolicy(masterHealthTimeout);
+        final TimeoutRetryPolicy policy = new TimeoutRetryPolicy(masterJoinTimeout);
         template.setRetryPolicy(policy);
         return template.execute(context -> {
             try {

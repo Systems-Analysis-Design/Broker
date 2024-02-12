@@ -4,7 +4,6 @@ import broker.config.BrokerConfig;
 import broker.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,8 +14,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class MessageService {
-    @Value("${application.master-host}")
-    private String masterHost;
     private final BrokerConfig brokerConfig;
     private final RestTemplate restTemplate;
     private final MessageReadWriteService messageReadWriteService;
@@ -33,18 +30,6 @@ public class MessageService {
         pullRequestDto.replicas().forEach(this::pullReplica);
         return messageDto;
     }
-
-//    @Scheduled(fixedRateString = "${application.master-health-interval}")
-//    public void callMasterHealth() {
-//        String uri = masterHost + "/api/health";
-//        MasterHealthRequestDto masterHealthRequestDto = new MasterHealthRequestDto(brokerConfig.getName(),
-//                                                                                   messageReadWriteService.getTotalNumberOfMessages(),
-//                                                                                   messageReadWriteService.getTotalNumberOfQueues());
-//        RequestEntity<MasterHealthRequestDto> requestEntity = RequestEntity.post(uri)
-//                                                                           .contentType(MediaType.APPLICATION_JSON)
-//                                                                           .body(masterHealthRequestDto);
-//        restTemplate.exchange(requestEntity, Void.class);
-//    }
 
     private void pushReplica(final String host, final MessageDto message) {
         try {
