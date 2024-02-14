@@ -16,11 +16,6 @@ spring:
 server:
   address: ${SERVER_HOST:localhost}
   port: ${SERVER_PORT:30012}
-#  tomcat:
-#    threads:
-#      max: ${TOMCAT_THREADS_MAX:1}
-#    max-swallow-size: ${TOMCAT_MAX_SWALLOW_SIZE:10MB}
-#    max-http-form-post-size: ${TOMCAT_MAX_HTTP_FORM_POST_SIZE:10MB}
   shutdown: graceful
 
 application:

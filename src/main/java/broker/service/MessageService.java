@@ -20,13 +20,13 @@ public class MessageService {
 
     public void push(final PushRequestDto pushRequestDto) {
         messageReadWriteService.push(pushRequestDto.name(), pushRequestDto.message());
-        log.info("message pushed: " + pushRequestDto.message().key());
+        log.info("message pushed with key: " + pushRequestDto.message().key() + ", value: " + pushRequestDto.message().value());
         pushRequestDto.replicas().forEach(x -> pushReplica(x, pushRequestDto.message()));
     }
 
     public MessageDto pull(final PullRequestDto pullRequestDto) {
         MessageDto messageDto = messageReadWriteService.pull(pullRequestDto.name());
-        log.info("message pulled: " + messageDto.key());
+        log.info("message pulled with key: " + messageDto.key() + ", value: " + messageDto.value());
         pullRequestDto.replicas().forEach(this::pullReplica);
         return messageDto;
     }
@@ -43,7 +43,7 @@ public class MessageService {
                 log.error("error in sync replicas for push");
             }
         } catch (Exception e) {
-            log.error("error in sync replicas for push", e);
+            // ignore
         }
 
     }
@@ -60,7 +60,7 @@ public class MessageService {
                 log.error("error in sync replicas for pull");
             }
         } catch (Exception e) {
-            log.error("error in sync replicas for pull", e);
+            // ignore
         }
     }
 }
