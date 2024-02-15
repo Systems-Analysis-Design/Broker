@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  master:
+    image: mirzaeimahdi409/systems_analysis_design_broker:latest
+    ports:
+      - target: 30012
+        published: 8083
+    deploy:
+      replicas: 1
+      mode: "replicated"
+      restart_policy:
+        condition: "on-failure"
+      resources:
+        limits:
+          cpus: "0.8"
+          memory: "900M"
+        reservations:
+          cpus: "0.2"
+          memory: "250M"
