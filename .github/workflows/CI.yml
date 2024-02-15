@@ -61,6 +61,6 @@ jobs:
         command_timeout: 5m
         script: |
           sudo -i
-          docker stack deploy --compose-file /root/docker-compose2.yaml master
-          docker stack deploy --compose-file /root/docker-compose3.yaml master
-          docker stack deploy --compose-file /root/docker-compose4.yaml master
+          docker stack deploy --compose-file /root/docker-compose2.yaml broker1
+          docker stack deploy --compose-file /root/docker-compose3.yaml broker2
+          docker stack deploy --compose-file /root/docker-compose4.yaml broker3
