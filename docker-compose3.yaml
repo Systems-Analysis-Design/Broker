@@ -3,6 +3,7 @@ version: "3.9"
 services:
   broker:
     image: mirzaeimahdi409/systems_analysis_design_broker:latest
+    pull_policy: always
     ports:
       - target: 30012
         published: 8083
