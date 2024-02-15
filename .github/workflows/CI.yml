@@ -1,5 +1,5 @@
 
-name: Java CI with Maven
+name: CI
 
 on:
   push:
@@ -28,3 +28,39 @@ jobs:
         registry: docker.io
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: copy docker-compose2 file to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        source: "docker-compose2.yaml"
+        target: "/root"
+    - name: copy docker-compose3 file to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        source: "docker-compose3.yaml"
+        target: "/root"
+    - name: copy docker-compose4 file to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        source: "docker-compose4.yaml"
+        target: "/root"
+    - name: deploy stack
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        command_timeout: 5m
+        script: |
+          sudo -i
+          docker stack deploy --compose-file /root/docker-compose2.yaml master
+          docker stack deploy --compose-file /root/docker-compose3.yaml master
+          docker stack deploy --compose-file /root/docker-compose4.yaml master

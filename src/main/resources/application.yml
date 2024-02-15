@@ -8,6 +8,7 @@ logging:
 spring:
   main:
     banner-mode: off
+
   application:
     name: @project.artifactId@
   cache:
@@ -19,5 +20,5 @@ server:
   shutdown: graceful
 
 application:
-  master-host: http://${MASTER_HOST:localhost:8080}
+  master-host: http://${MASTER_HOST:localhost:8081}
   master-join-timeout: ${MASTER_JOIN_TIMEOUT:20000}
